@@ -259,8 +259,8 @@ body {
 .brand-badge {
   font-size: 0.65rem;
   font-weight: 700;
-  background: var(--amber-500);
-  color: var(--navy-950);
+  background: var(--blue-600);
+  color: #ffffff;
   padding: 1px 6px;
   border-radius: 4px;
   letter-spacing: 0.05em;
