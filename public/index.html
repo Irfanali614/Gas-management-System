@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Al Zahoor Gas Center | Professional LPG Shop Management</title>
+  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+  <!-- ====================================================================== -->
+  <!-- 1. LOGIN SCREEN (Visible when unauthenticated) -->
+  <!-- ====================================================================== -->
+  <div id="auth-screen" class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <img src="/assets/logo.png" alt="Al Zahoor Gas Center Logo" class="auth-logo">
+        <h1 class="auth-title">AL ZAHOOR GAS CENTER</h1>
+        <p class="auth-subtitle">LPG Refilling &amp; Gas Services Management System</p>
+      </div>
+
+      <form id="login-form" class="auth-form" onsubmit="handleLogin(event)">
+        <div id="login-alert" class="alert alert-danger hidden"></div>
+
+        <div class="form-group">
+          <label for="login-username">Admin Username or Email</label>
+          <div class="input-icon-wrap">
+            <i class="fa-solid fa-user input-icon"></i>
+            <input type="text" id="login-username" class="form-control" placeholder="Enter admin username" required autocomplete="username">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <div class="input-icon-wrap">
+            <i class="fa-solid fa-lock input-icon"></i>
+            <input type="password" id="login-password" class="form-control" placeholder="Enter password" required autocomplete="current-password">
+            <button type="button" class="btn-toggle-pass" onclick="togglePasswordVisibility('login-password')">
+              <i class="fa-solid fa-eye" id="login-password-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="btn-login-submit" class="btn btn-primary btn-block btn-lg">
+          <i class="fa-solid fa-right-to-bracket"></i> Sign In to Dashboard
+        </button>
+
+        <div class="auth-footer-notice">
+          <p><i class="fa-solid fa-shield-halved"></i> Secure Authenticated Portal</p>
+          <p class="text-muted text-xs">Default Initial Login: <strong>admin</strong> / <strong>admin123</strong></p>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- 2. MAIN APP CONTAINER (Visible when authenticated) -->
+  <!-- ====================================================================== -->
+  <div id="app-container" class="app-layout hidden">
+
+    <!-- Mobile Backdrop -->
+    <div id="sidebar-backdrop" class="sidebar-backdrop hidden" onclick="toggleSidebar(false)"></div>
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-box">
+          <img src="/assets/logo.png" alt="Logo" class="brand-logo">
+          <div class="brand-info">
+            <h2 class="brand-title">AL ZAHOOR</h2>
+            <span class="brand-badge">LPG GAS CENTER</span>
+          </div>
+        </div>
+        <button class="btn-close-sidebar md-hidden" onclick="toggleSidebar(false)">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="sidebar-body">
+        <div class="nav-section-label">MAIN OPERATIONS</div>
+        <nav class="nav-menu">
+          <a href="#dashboard" class="nav-item active" data-view="dashboard" onclick="navigate('dashboard')">
+            <i class="fa-solid fa-gauge-high"></i>
+            <span>Dashboard</span>
+          </a>
+          <a href="#sales" class="nav-item" data-view="sales" onclick="navigate('sales')">
+            <i class="fa-solid fa-fire-flame-curved"></i>
+            <span>LPG Sales &amp; Refill</span>
+          </a>
+          <a href="#customers" class="nav-item" data-view="customers" onclick="navigate('customers')">
+            <i class="fa-solid fa-users"></i>
+            <span>Customers &amp; Khata</span>
+          </a>
+          <a href="#payments" class="nav-item" data-view="payments" onclick="navigate('payments')">
+            <i class="fa-solid fa-money-bill-wave"></i>
+            <span>Payment Collection</span>
+          </a>
+          <a href="#receipts" class="nav-item" data-view="receipts" onclick="navigate('receipts')">
+            <i class="fa-solid fa-receipt"></i>
+            <span>Receipts &amp; Bills</span>
+          </a>
+        </nav>
+
+        <div class="nav-section-label">INVENTORY &amp; ACCOUNTS</div>
+        <nav class="nav-menu">
+          <a href="#stock" class="nav-item" data-view="stock" onclick="navigate('stock')">
+            <i class="fa-solid fa-cubes-stacked"></i>
+            <span>Cylinder Stock</span>
+            <span id="badge-low-stock" class="nav-badge hidden">Alert</span>
+          </a>
+          <a href="#expenses" class="nav-item" data-view="expenses" onclick="navigate('expenses')">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Shop Expenses</span>
+          </a>
+          <a href="#reports" class="nav-item" data-view="reports" onclick="navigate('reports')">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>Reports &amp; Profit</span>
+          </a>
+        </nav>
+
+        <div class="nav-section-label">ADMINISTRATION</div>
+        <nav class="nav-menu">
+          <a href="#settings" class="nav-item" data-view="settings" onclick="navigate('settings')">
+            <i class="fa-solid fa-gear"></i>
+            <span>Business Settings</span>
+          </a>
+          <a href="#audit" class="nav-item" data-view="audit" onclick="navigate('audit')">
+            <i class="fa-solid fa-clock-rotate-left"></i>
+            <span>Audit Trail</span>
+          </a>
+        </nav>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="user-profile-widget">
+          <div class="avatar-circle">
+            <i class="fa-solid fa-user-shield"></i>
+          </div>
+          <div class="user-details">
+            <span id="user-display-name" class="user-name">Al Zahoor Admin</span>
+            <span class="user-role">Shop Manager</span>
+          </div>
+        </div>
+        <div class="user-actions-bar">
+          <button class="btn-sidebar-action" title="Change Password" onclick="openChangePasswordModal()">
+            <i class="fa-solid fa-key"></i>
+          </button>
+          <button class="btn-sidebar-action text-danger" title="Sign Out" onclick="handleLogout()">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper">
+
+      <!-- TOP NAVIGATION BAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="btn-toggle-sidebar" onclick="toggleSidebar(true)">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="topbar-title-wrap">
+            <h1 id="page-title" class="topbar-title">Dashboard</h1>
+            <span class="topbar-subtitle">Al Zahoor Gas Center Management</span>
+          </div>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Quick Action Buttons -->
+          <div class="quick-actions">
+            <button class="btn btn-sm btn-primary" onclick="openSaleModal()">
+              <i class="fa-solid fa-plus"></i> <span class="btn-text">New LPG Sale</span>
+            </button>
+            <button class="btn btn-sm btn-success" onclick="openPaymentModal()">
+              <i class="fa-solid fa-hand-holding-dollar"></i> <span class="btn-text">Receive Payment</span>
+            </button>
+            <button class="btn btn-sm btn-outline" onclick="openCustomerModal()">
+              <i class="fa-solid fa-user-plus"></i> <span class="btn-text">Add Customer</span>
+            </button>
+          </div>
+
+          <!-- Date & Status -->
+          <div class="system-status-indicator">
+            <span class="live-dot"></span>
+            <span id="system-live-clock" class="mono text-xs">--:--:--</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- PAGE CONTENT AREA -->
+      <main class="page-content">
+
+        <!-- ================================================================ -->
+        <!-- VIEW: DASHBOARD -->
+        <!-- ================================================================ -->
+        <section id="view-dashboard" class="view-section">
+          <!-- Period Filter Bar -->
+          <div class="filter-header-card">
+            <div class="filter-title">
+              <i class="fa-solid fa-filter"></i>
+              <span>Dashboard Period:</span>
+            </div>
+            <div class="filter-pills" id="dashboard-period-pills">
+              <button class="filter-pill active" onclick="setDashboardPeriod('today', this)">Today</button>
+              <button class="filter-pill" onclick="setDashboardPeriod('yesterday', this)">Yesterday</button>
+              <button class="filter-pill" onclick="setDashboardPeriod('this_week', this)">This Week</button>
+              <button class="filter-pill" onclick="setDashboardPeriod('this_month', this)">This Month</button>
+            </div>
+            <div class="filter-custom-date">
+              <input type="date" id="dash-start-date" class="form-control form-control-sm">
+              <span>to</span>
+              <input type="date" id="dash-end-date" class="form-control form-control-sm">
+              <button class="btn btn-sm btn-secondary" onclick="applyCustomDashboardDate()">Apply</button>
+            </div>
+          </div>
+
+          <!-- Low Stock Alert Banner (Dynamic) -->
+          <div id="dashboard-low-stock-banner" class="alert alert-warning hidden">
+            <div class="alert-content">
+              <i class="fa-solid fa-triangle-exclamation alert-icon"></i>
+              <div>
+                <strong>Low Stock Notification:</strong>
+                <span id="dashboard-low-stock-text">Some cylinder sizes are running low.</span>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-warning" onclick="navigate('stock')">Review Stock</button>
+          </div>
+
+          <!-- Metrics KPI Grid -->
+          <div class="kpi-grid">
+            <!-- Card 1: Today's Sales -->
+            <div class="kpi-card card-sales">
+              <div class="kpi-icon-wrap bg-blue-subtle text-blue">
+                <i class="fa-solid fa-fire-flame-simple"></i>
+              </div>
+              <div class="kpi-data">
+                <span class="kpi-label">Sales Volume</span>
+                <h3 id="kpi-today-sales" class="kpi-value">Rs 0</h3>
+                <span id="kpi-today-kg" class="kpi-subtext">0.0 KG Refilled</span>
+              </div>
+            </div>
+
+            <!-- Card 2: Today's Collected Payments -->
+            <div class="kpi-card card-payments">
+              <div class="kpi-icon-wrap bg-emerald-subtle text-emerald">
+                <i class="fa-solid fa-circle-dollar-to-slot"></i>
+              </div>
+              <div class="kpi-data">
+                <span class="kpi-label">Cash Collected</span>
+                <h3 id="kpi-today-collected" class="kpi-value">Rs 0</h3>
+                <span class="kpi-subtext text-success">Actual Payments Received</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Total Outstanding Customer Balances (Udhar) -->
+            <div class="kpi-card card-outstanding">
+              <div class="kpi-icon-wrap bg-rose-subtle text-rose">
+                <i class="fa-solid fa-book-open"></i>
+              </div>
+              <div class="kpi-data">
+                <span class="kpi-label">Total Outstanding (Udhar)</span>
+                <h3 id="kpi-total-outstanding" class="kpi-value text-danger">Rs 0</h3>
+                <span class="kpi-subtext text-danger">Customer Receivables</span>
+              </div>
+            </div>
+
+            <!-- Card 4: Total Expenses -->
+            <div class="kpi-card card-expenses">
+              <div class="kpi-icon-wrap bg-amber-subtle text-amber">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+              <div class="kpi-data">
+                <span class="kpi-label">Expenses</span>
+                <h3 id="kpi-today-expenses" class="kpi-value">Rs 0</h3>
+                <span class="kpi-subtext">Operational Costs</span>
+              </div>
+            </div>
+
+            <!-- Card 5: Total Active Customers -->
+            <div class="kpi-card card-customers">
+              <div class="kpi-icon-wrap bg-indigo-subtle text-indigo">
+                <i class="fa-solid fa-users"></i>
+              </div>
+              <div class="kpi-data">
+                <span class="kpi-label">Total Customers</span>
+                <h3 id="kpi-total-customers" class="kpi-value">0</h3>
+                <span class="kpi-subtext">Active Accounts</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cylinder Stock Status Row -->
+          <div class="dashboard-section-title">
+            <i class="fa-solid fa-boxes-stacked"></i> Current LPG Cylinder Stock
+          </div>
+          <div class="cylinder-stock-grid" id="dashboard-stock-cards">
+            <!-- Dynamic Stock Cards: 45.5 KG, 11.8 KG, 3.9 KG -->
+            <div class="loading-placeholder">Loading cylinder inventory...</div>
+          </div>
+
+          <!-- Charts & Recent Activity Row -->
+          <div class="dashboard-columns-2">
+            <!-- Left: Monthly Revenue & Sales Chart -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa-solid fa-chart-column text-blue"></i> Monthly Revenue Trend
+                </div>
+                <span class="badge badge-info">Last 6 Months</span>
+              </div>
+              <div class="card-body">
+                <div id="chart-sales-container" class="chart-box">
+                  <canvas id="monthly-sales-canvas" height="220"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Recent Activity Feed -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">
+                  <i class="fa-solid fa-clock-rotate-left text-amber"></i> Recent Transactions
+                </div>
+                <button class="btn btn-xs btn-outline" onclick="navigate('sales')">View All</button>
+              </div>
+              <div class="card-body p-0">
+                <div id="dashboard-recent-transactions" class="recent-trx-list">
+                  <div class="loading-placeholder">Loading recent transactions...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- VIEW: LPG SALES & REFILLING -->
+        <!-- ================================================================ -->
+        <section id="view-sales" class="view-section hidden">
+          <div class="section-topbar">
+            <div>
+              <h2 class="section-heading">LPG Sales &amp; Refilling Records</h2>
+              <p class="section-subheading">Manage cylinder refilling transactions, payments, and Udhar sales.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openSaleModal()">
+              <i class="fa-solid fa-plus"></i> New LPG Sale
+            </button>
+          </div>
+
+          <!-- Sales Filter Toolbar -->
+          <div class="table-toolbar">
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="sales-search-input" class="form-control" placeholder="Search customer, mobile, TRX ID, or Receipt #..." onkeyup="filterSalesTable()">
+            </div>
+            <div class="toolbar-controls">
+              <select id="sales-filter-size" class="form-control" onchange="filterSalesTable()">
+                <option value="">All Cylinder Sizes</option>
+                <option value="45.5">45.5 KG</option>
+                <option value="11.8">11.8 KG</option>
+                <option value="3.9">3.9 KG</option>
+              </select>
+              <select id="sales-filter-payment" class="form-control" onchange="filterSalesTable()">
+                <option value="">All Payment Types</option>
+                <option value="Full Payment">Full Payment</option>
+                <option value="Partial Payment">Partial Payment</option>
+                <option value="Credit / Udhar">Credit / Udhar</option>
+              </select>
+              <select id="sales-filter-status" class="form-control" onchange="filterSalesTable()">
+                <option value="">All Statuses</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Sales Table -->
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table" id="sales-table">
+                <thead>
+                  <tr>
+                    <th>Date &amp; Time</th>
+                    <th>TRX / Receipt #</th>
+                    <th>Customer Name</th>
+                    <th>Mobile #</th>
+                    <th>Cylinder Size</th>
+                    <th>Qty</th>
+                    <th>Total KG</th>
+                    <th>Total (PKR)</th>
+                    <th>Paid (PKR)</th>
+                    <th>Remaining (PKR)</th>
+                    <th>Status</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="sales-table-body">
+                  <tr><td colspan="12" class="text-center py-4">Loading sales records...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- VIEW: CUSTOMERS & KHATA -->
+        <!-- ================================================================ -->
+        <section id="view-customers" class="view-section hidden">
+          <div class="section-topbar">
+            <div>
+              <h2 class="section-heading">Customer Accounts &amp; Khata Ledger</h2>
+              <p class="section-subheading">Manage customer directory, credit limits, account balances, and running ledgers.</p>
+            </div>
+            <button class="btn btn-primary" onclick="openCustomerModal()">
+              <i class="fa-solid fa-user-plus"></i> Add New Customer
+            </button>
+          </div>
+
+          <!-- Customer Filter Toolbar -->
+          <div class="table-toolbar">
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="customers-search-input" class="form-control" placeholder="Search by customer name, mobile, or ID..." onkeyup="filterCustomersTable()">
+            </div>
+            <div class="toolbar-controls">
+              <select id="customers-filter-type" class="form-control" onchange="filterCustomersTable()">
+                <option value="ALL">All Customer Types</option>
+                <option value="Regular Customer">Regular Customer</option>
+                <option value="Shop">Shop</option>
+                <option value="Hotel">Hotel</option>
+                <option value="Restaurant">Restaurant</option>
+                <option value="Business Customer">Business Customer</option>
+                <option value="Other">Other</option>
+              </select>
+              <select id="customers-filter-status" class="form-control" onchange="filterCustomersTable()">
+                <option value="active">Active Customers</option>
+                <option value="deactivated">Deactivated Customers</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Customers Table -->
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table" id="customers-table">
+                <thead>
+                  <tr>
+                    <th>Customer ID</th>
+                    <th>Customer Name</th>
+                    <th>Mobile Number</th>
+                    <th>Type</th>
+                    <th>Address</th>
+                    <th>Total Billed</th>
+                    <th>Total Paid</th>
+                    <th>Outstanding Balance (PKR)</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="customers-table-body">
+                  <tr><td colspan="9" class="text-center py-4">Loading customer records...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- VIEW: PAYMENT COLLECTION -->
+        <!-- ================================================================ -->
+        <section id="view-payments" class="view-section hidden">
+          <div class="section-topbar">
+            <div>
+              <h2 class="section-heading">Payment Collection</h2>
+              <p class="section-subheading">Receive cash, bank transfers, Easypaisa, or JazzCash to clear customer Udhar balances.</p>
+            </div>
+            <button class="btn btn-success" onclick="openPaymentModal()">
+              <i class="fa-solid fa-hand-holding-dollar"></i> Receive Payment
+            </button>
+          </div>
+
+          <!-- Payments Filter Toolbar -->
+          <div class="table-toolbar">
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="payments-search-input" class="form-control" placeholder="Search payment ID, receipt, customer name, mobile..." onkeyup="filterPaymentsTable()">
+            </div>
+            <div class="toolbar-controls">
+              <select id="payments-filter-method" class="form-control" onchange="filterPaymentsTable()">
+                <option value="">All Payment Methods</option>
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Easypaisa">Easypaisa</option>
+                <option value="JazzCash">JazzCash</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Payments Table -->
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table" id="payments-table">
+                <thead>
+                  <tr>
+                    <th>Date &amp; Time</th>
+                    <th>Payment ID</th>
+                    <th>Receipt #</th>
+                    <th>Customer Name</th>
+                    <th>Mobile #</th>
+                    <th>Amount Paid (PKR)</th>
+                    <th>Payment Method</th>
+                    <th>Reference</th>
+                    <th>Previous Balance</th>
+                    <th>New Balance</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="payments-table-body">
+                  <tr><td colspan="11" class="text-center py-4">Loading payments...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- VIEW: RECEIPTS & BILLS -->
+        <!-- ================================================================ -->
+        <section id="view-receipts" class="view-section hidden">
+          <div class="section-topbar">
+            <div>
+              <h2 class="section-heading">Receipts &amp; Invoices Archive</h2>
+              <p class="section-subheading">Search, review, and reprint professional thermal (80mm) receipts or A4 invoices.</p>
+            </div>
+          </div>
+
+          <div class="table-toolbar">
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="receipts-search-input" class="form-control" placeholder="Search receipt #, customer name, TRX ID..." onkeyup="filterReceiptsTable()">
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table" id="receipts-table">
+                <thead>
+                  <tr>
+                    <th>Receipt #</th>
+                    <th>Type</th>
+                    <th>Transaction ID</th>
+                    <th>Date</th>
+                    <th>Customer Name</th>
+                    <th>Mobile #</th>
+                    <th>Amount (PKR)</th>
+                    <th>Paid (PKR)</th>
+                    <th>Remaining (PKR)</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="receipts-table-body">
+                  <tr><td colspan="10" class="text-center py-4">Loading receipts...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- VIEW: CYLINDER STOCK -->
+        <!-- ================================================================ -->
+        <section id="view-stock" class="view-section hidden">
+          <div class="section-topbar">
+            <div>
+              <h2 class="section-heading">LPG Cylinder Stock Management</h2>
+              <p class="section-subheading">Track physical cylinder inventory, supplier purchases, adjustments, and movement history.</p>
+            </div>
+            <div class="action-buttons-group">
+              <button class="btn btn-primary" onclick="openReceiveStockModal()">
+                <i class="fa-solid fa-truck-ramp-box"></i> Receive Stock / Purchase
+              </button>
+              <button class="btn btn-outline" onclick="openAdjustStockModal()">
+                <i class="fa-solid fa-sliders"></i> Stock Adjustment
+              </button>
+            </div>
+          </div>
+
+          <!-- Stock Summary Cards -->
+          <div class="stock-cards-row" id="stock-inventory-cards">
+            <!-- Dynamic Stock Cards: 45.5 KG, 11.8 KG, 3.9 KG -->
+            <div class="loading-placeholder">Loading inventory details...</div>
+          </div>
+
+          <!-- Stock Movement Log -->
+          <div class="card mt-4">
+            <div class="card-header">
+              <div class="card-title">
+                <i class="fa-solid fa-list-check text-blue"></i> Stock Movement History
+              </div>
+              <div class="card-actions">
+                <select id="movements-filter-size" class="form-control form-control-sm" onchange="loadStockMovements()">
+                  <option value="">All Sizes</option>
+                  <option value="45.5">45.5 KG</option>
+                  <option value="11.8">11.8 KG</option>
+                  <option value="3.9">3.9 KG</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="table" id="movements-table">
+                <thead>
+                  <tr>
+                    <th>Date &amp; Time</th>
+                    <th>Movement ID</th>
+                    <th>Cylinder Size</th>
+                    <th>Qty</th>
+                    <th>Movement Type</th>
+                    <th>Previous Stock</th>
+                    <th>New Stock</th>
+                    <th>Reference</th>
+                    <th>Remarks</th>
+                  </tr>
+                </thead>
+                <tbody id="movements-table-body">
+                  <tr><td colspan="9" class="text-center py-4">Loading stock movements...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- VIEW: EXPENSES -->
+        <!-- ================================================================ -->
+        <section id="view-expenses" class="view-section hidden">
+          <div class="section-topbar">
+            <div>
+              <h2 class="section-heading">Shop Expense Management</h2>
+              <p class="section-subheading">Track shop expenditures (Electricity, Transportation, Salaries, Maintenance, Rent).</p>
+            </div>
+            <button class="btn btn-primary" onclick="openExpenseModal()">
+              <i class="fa-solid fa-plus"></i> Record Expense
+            </button>
+          </div>
+
+          <div class="table-toolbar">
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="expenses-search-input" class="form-control" placeholder="Search expense description, ID..." onkeyup="filterExpensesTable()">
+            </div>
+            <div class="toolbar-controls">
+              <select id="expenses-filter-category" class="form-control" onchange="filterExpensesTable()">
+                <option value="ALL">All Categories</option>
+                <option value="Transportation">Transportation</option>
+                <option value="Electricity">Electricity</option>
+                <option value="Employee Salary">Employee Salary</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Rent">Rent</option>
+                <option value="Loading / Unloading">Loading / Unloading</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Recorded Expenses</div>
+              <div class="badge badge-warning" id="total-expense-badge">Total: Rs 0</div>
+            </div>
+            <div class="table-responsive">
+              <table class="table" id="expenses-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Expense ID</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Amount (PKR)</th>
+                    <th>Payment Method</th>
+                    <th>Remarks</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="expenses-table-body">
+                  <tr><td colspan="8" class="text-center py-4">Loading expenses...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- VIEW: REPORTS & ACCOUNTING -->
+        <!-- ================================================================ -->
+        <section id="view-reports" class="view-section hidden">
+          <div class="section-topbar">
+            <div>
+              <h2 class="section-heading">Financial Reports &amp; Profit / Loss</h2>
+              <p class="section-subheading">Comprehensive accounting reports, revenue, expenses, and customer receivables.</p>
+            </div>
+            <div class="action-buttons-group">
+              <button class="btn btn-outline" onclick="exportReportToCSV()">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+              </button>
+              <button class="btn btn-secondary" onclick="printFinancialReport()">
+                <i class="fa-solid fa-print"></i> Print Report
+              </button>
+            </div>
+          </div>
+
+          <!-- Report Filter Card -->
+          <div class="filter-header-card">
+            <div class="filter-title"><i class="fa-solid fa-calendar-days"></i> Period:</div>
+            <div class="filter-pills" id="report-period-pills">
+              <button class="filter-pill active" onclick="setReportPeriod('today', this)">Today</button>
+              <button class="filter-pill" onclick="setReportPeriod('yesterday', this)">Yesterday</button>
+              <button class="filter-pill" onclick="setReportPeriod('7_days', this)">Last 7 Days</button>
+              <button class="filter-pill" onclick="setReportPeriod('this_month', this)">This Month</button>
+              <button class="filter-pill" onclick="setReportPeriod('last_month', this)">Last Month</button>
+              <button class="filter-pill" onclick="setReportPeriod('this_year', this)">This Year</button>
+            </div>
+          </div>
+
+          <!-- Profit & Loss Summary Cards -->
+          <div class="kpi-grid mb-4">
+            <div class="kpi-card">
+              <span class="kpi-label">Completed Sales Revenue</span>
+              <h3 id="rep-revenue" class="kpi-value text-blue">Rs 0</h3>
+              <span class="kpi-subtext">Total Invoiced Sales</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Cost of Goods Sold (COGS)</span>
+              <h3 id="rep-cogs" class="kpi-value text-slate-700">Rs 0</h3>
+              <span class="kpi-subtext">Cylinder Purchase Cost</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Gross Profit</span>
+              <h3 id="rep-gross-profit" class="kpi-value text-emerald">Rs 0</h3>
+              <span class="kpi-subtext">Revenue - COGS</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Total Expenses</span>
+              <h3 id="rep-expenses" class="kpi-value text-rose">Rs 0</h3>
+              <span class="kpi-subtext">Shop Overhead Costs</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Net Profit</span>
+              <h3 id="rep-net-profit" class="kpi-value text-emerald">Rs 0</h3>
+              <span class="kpi-subtext">Gross Profit - Expenses</span>
+            </div>
+          </div>
+
+          <!-- Cash Flow vs Receivables Row -->
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="card p-4">
+              <h4 class="font-bold text-slate-700 mb-2"><i class="fa-solid fa-money-bill-trend-up text-success"></i> Cash Flow &amp; Collection</h4>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between py-1 border-b">
+                  <span>Downpayments from Sales:</span>
+                  <strong id="rep-sales-downpay" class="mono">Rs 0</strong>
+                </div>
+                <div class="flex justify-between py-1 border-b">
+                  <span>Customer Khata Payments Collected:</span>
+                  <strong id="rep-khata-pay" class="mono">Rs 0</strong>
+                </div>
+                <div class="flex justify-between py-1 font-bold text-base text-emerald-700">
+                  <span>Total Cash Inflow:</span>
+                  <span id="rep-total-inflow" class="mono">Rs 0</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card p-4">
+              <h4 class="font-bold text-slate-700 mb-2"><i class="fa-solid fa-hand-holding-dollar text-danger"></i> Customer Receivables (Udhar)</h4>
+              <div class="space-y-2 text-sm">
+                <div class="flex justify-between py-1 border-b">
+                  <span>Total Outstanding Balances:</span>
+                  <strong id="rep-total-receivables" class="mono text-danger">Rs 0</strong>
+                </div>
+                <div class="flex justify-between py-1 border-b">
+                  <span>Customers with Udhar:</span>
+                  <strong id="rep-udhar-customers-count" class="mono">0</strong>
+                </div>
+                <div class="flex justify-between py-1 text-slate-500 text-xs">
+                  <span>All customer debit vs credit ledgers verified.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cylinder Breakdown Table -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <div class="card-title"><i class="fa-solid fa-cubes text-blue"></i> Cylinder-Wise Sales Breakdown</div>
+            </div>
+            <div class="table-responsive">
+              <table class="table" id="cylinder-sales-breakdown-table">
+                <thead>
+                  <tr>
+                    <th>Cylinder Size</th>
+                    <th>Total Cylinders Sold</th>
+                    <th>Total Volume (KG)</th>
+                    <th>Standard Selling Rate</th>
+                    <th>Total Sales Value (PKR)</th>
+                  </tr>
+                </thead>
+                <tbody id="cylinder-breakdown-body">
+                  <tr><td>45.5 KG Commercial</td><td id="cb-qty-45">0</td><td id="cb-kg-45">0.0 KG</td><td id="cb-rate-45">Rs 12,000</td><td id="cb-val-45">Rs 0</td></tr>
+                  <tr><td>11.8 KG Domestic</td><td id="cb-qty-11">0</td><td id="cb-kg-11">0.0 KG</td><td id="cb-rate-11">Rs 3,200</td><td id="cb-val-11">Rs 0</td></tr>
+                  <tr><td>3.9 KG Small</td><td id="cb-qty-3">0</td><td id="cb-kg-3">0.0 KG</td><td id="cb-rate-3">Rs 1,100</td><td id="cb-val-3">Rs 0</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- VIEW: BUSINESS SETTINGS -->
+        <!-- ================================================================ -->
+        <section id="view-settings" class="view-section hidden">
+          <div class="section-topbar">
+            <div>
+              <h2 class="section-heading">Business Settings &amp; Configuration</h2>
+              <p class="section-subheading">Configure shop details, cylinder selling rates, low-stock thresholds, and receipt footers.</p>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <!-- Left: Business Info Form -->
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title"><i class="fa-solid fa-store text-blue"></i> Shop Profile &amp; Contact Information</div>
+              </div>
+              <div class="card-body">
+                <form id="settings-form" onsubmit="saveSettings(event)">
+                  <div class="form-group">
+                    <label for="set-biz-name">Business Name</label>
+                    <input type="text" id="set-biz-name" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="set-category">Business Category</label>
+                    <input type="text" id="set-category" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="set-tagline">Tagline / Subtitle</label>
+                    <input type="text" id="set-tagline" class="form-control">
+                  </div>
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="form-group">
+                      <label for="set-mobile">Mobile Number</label>
+                      <input type="text" id="set-mobile" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="set-whatsapp">WhatsApp Number</label>
+                      <input type="text" id="set-whatsapp" class="form-control">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="set-address">Shop Address</label>
+                    <textarea id="set-address" class="form-control" rows="2" required></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label for="set-receipt-footer">Receipt Footer Message</label>
+                    <textarea id="set-receipt-footer" class="form-control" rows="2"></textarea>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-3">
+                    <div class="form-group">
+                      <label for="set-currency">Currency Code</label>
+                      <input type="text" id="set-currency" class="form-control" value="PKR" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="set-receipt-format">Default Receipt Format</label>
+                      <select id="set-receipt-format" class="form-control">
+                        <option value="80mm">Thermal 80mm Roll Printer</option>
+                        <option value="A4">Standard A4 Full Page</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="set-allow-negative-stock">
+                      <span>Allow Authorized Negative Stock Override</span>
+                    </label>
+                    <small class="text-muted block mt-1">If enabled, sales can be completed even if recorded cylinder inventory is 0.</small>
+                  </div>
+
+                  <!-- Cylinder Rates & Thresholds -->
+                  <h4 class="font-bold text-slate-700 mt-4 mb-2 border-b pb-1">
+                    <i class="fa-solid fa-tags text-amber"></i> Configurable Cylinder Selling Rates (PKR)
+                  </h4>
+                  <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="form-group">
+                      <label for="rate-45">45.5 KG Commercial</label>
+                      <input type="number" id="rate-45" class="form-control" min="0" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="rate-11">11.8 KG Domestic</label>
+                      <input type="number" id="rate-11" class="form-control" min="0" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="rate-3">3.9 KG Small</label>
+                      <input type="number" id="rate-3" class="form-control" min="0" required>
+                    </div>
+                  </div>
+
+                  <h4 class="font-bold text-slate-700 mt-2 mb-2 border-b pb-1">
+                    <i class="fa-solid fa-bell text-rose"></i> Low-Stock Alert Thresholds (Cylinder Count)
+                  </h4>
+                  <div class="grid grid-cols-3 gap-3 mb-4">
+                    <div class="form-group">
+                      <label for="thresh-45">45.5 KG Alert Level</label>
+                      <input type="number" id="thresh-45" class="form-control" min="0" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="thresh-11">11.8 KG Alert Level</label>
+                      <input type="number" id="thresh-11" class="form-control" min="0" required>
+                    </div>
+                    <div class="form-group">
+                      <label for="thresh-3">3.9 KG Alert Level</label>
+                      <input type="number" id="thresh-3" class="form-control" min="0" required>
+                    </div>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Settings
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Right: Admin Password & System Info -->
+            <div class="space-y-4">
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><i class="fa-solid fa-lock text-rose"></i> Admin Security &amp; Credentials</div>
+                </div>
+                <div class="card-body">
+                  <p class="text-sm text-slate-600 mb-4">Update your master admin password to secure your accounting and sales records.</p>
+                  <button class="btn btn-secondary btn-block" onclick="openChangePasswordModal()">
+                    <i class="fa-solid fa-key"></i> Change Admin Password
+                  </button>
+                </div>
+              </div>
+
+              <div class="card">
+                <div class="card-header">
+                  <div class="card-title"><i class="fa-solid fa-database text-emerald"></i> Database &amp; System Health</div>
+                </div>
+                <div class="card-body text-sm space-y-2">
+                  <div class="flex justify-between border-b py-1">
+                    <span>Database Engine:</span>
+                    <strong class="text-emerald-700">MongoDB Atlas / Mongoose</strong>
+                  </div>
+                  <div class="flex justify-between border-b py-1">
+                    <span>Node.js Version:</span>
+                    <strong class="mono">v24.x (Active)</strong>
+                  </div>
+                  <div class="flex justify-between border-b py-1">
+                    <span>Vercel Serverless:</span>
+                    <strong class="text-blue-700">Ready</strong>
+                  </div>
+                  <div class="flex justify-between py-1">
+                    <span>Accounting Method:</span>
+                    <strong>Double-entry Ledger Khata</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- VIEW: AUDIT LOG -->
+        <!-- ================================================================ -->
+        <section id="view-audit" class="view-section hidden">
+          <div class="section-topbar">
+            <div>
+              <h2 class="section-heading">System Audit Log</h2>
+              <p class="section-subheading">Immutable event log tracking all sales, cancellations, customer additions, and stock changes.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table" id="audit-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Module</th>
+                    <th>User</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                  </tr>
+                </thead>
+                <tbody id="audit-table-body">
+                  <tr><td colspan="6" class="text-center py-4">Loading audit logs...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ====================================================================== -->
+  <!-- 3. MODALS & POPUPS -->
+  <!-- ====================================================================== -->
+
+  <!-- MODAL: NEW LPG SALE / REFILLING -->
+  <div id="modal-sale" class="modal-backdrop hidden">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-fire-flame-curved text-orange-500"></i> New LPG Sale / Refilling</h3>
+        <button class="modal-close" onclick="closeModal('modal-sale')">&times;</button>
+      </div>
+      <form id="sale-form" onsubmit="handleSaleSubmit(event)">
+        <div class="modal-body">
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Customer Select -->
+            <div class="form-group col-span-2">
+              <label for="sale-customer-select">Select Customer *</label>
+              <div class="flex gap-2">
+                <select id="sale-customer-select" class="form-control" required onchange="onSaleCustomerChange()">
+                  <option value="">-- Choose Customer --</option>
+                </select>
+                <button type="button" class="btn btn-outline whitespace-nowrap" onclick="openCustomerModalFromSale()">
+                  <i class="fa-solid fa-user-plus"></i> Quick Add
+                </button>
+              </div>
+              <!-- Customer Balance Badge -->
+              <div id="sale-customer-balance-box" class="customer-info-pill hidden mt-2">
+                <span>Current Balance (Udhar): </span>
+                <strong id="sale-cust-balance-val" class="mono text-rose-600">Rs 0</strong>
+                <span id="sale-cust-mobile-val" class="text-xs text-slate-500 ml-3"></span>
+              </div>
+            </div>
+
+            <!-- Cylinder Size -->
+            <div class="form-group">
+              <label for="sale-cylinder-size">Cylinder Size *</label>
+              <select id="sale-cylinder-size" class="form-control" required onchange="onSaleSizeOrQtyChange()">
+                <option value="45.5">45.5 KG (Commercial)</option>
+                <option value="11.8" selected>11.8 KG (Domestic)</option>
+                <option value="3.9">3.9 KG (Small)</option>
+              </select>
+            </div>
+
+            <!-- Quantity -->
+            <div class="form-group">
+              <label for="sale-quantity">Quantity (Cylinders) *</label>
+              <input type="number" id="sale-quantity" class="form-control" min="1" value="1" required oninput="onSaleSizeOrQtyChange()">
+            </div>
+
+            <!-- Rate per Cylinder -->
+            <div class="form-group">
+              <label for="sale-rate">Per Cylinder Rate (PKR) *</label>
+              <input type="number" id="sale-rate" class="form-control" min="0" required oninput="onSaleSizeOrQtyChange()">
+            </div>
+
+            <!-- Total KG (Auto-calculated) -->
+            <div class="form-group">
+              <label>Total Gas Weight</label>
+              <input type="text" id="sale-total-kg" class="form-control bg-slate-100 font-bold mono" readonly value="11.80 KG">
+            </div>
+          </div>
+
+          <!-- Sale Financial Calculation Summary Card -->
+          <div class="calc-summary-card my-3">
+            <div class="calc-row">
+              <span>Total Sale Amount:</span>
+              <strong id="sale-calc-total-amount" class="text-blue-700 text-lg mono">Rs 3,200</strong>
+            </div>
+            <div class="calc-row">
+              <span>Previous Customer Balance:</span>
+              <span id="sale-calc-prev-balance" class="mono">Rs 0</span>
+            </div>
+            <div class="calc-row">
+              <span>New Balance If Unpaid:</span>
+              <span id="sale-calc-max-balance" class="mono font-semibold">Rs 3,200</span>
+            </div>
+          </div>
+
+          <!-- Payment Section -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label for="sale-amount-paid">Amount Paid Now (PKR) *</label>
+              <input type="number" id="sale-amount-paid" class="form-control font-bold text-emerald-700" min="0" value="0" required oninput="onSalePaymentChange()">
+              <div class="flex gap-1 mt-1">
+                <button type="button" class="btn btn-xs btn-outline" onclick="setSalePaidFull()">Paid Full</button>
+                <button type="button" class="btn btn-xs btn-outline" onclick="setSalePaidZero()">Udhar (Rs 0)</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="sale-payment-method">Payment Method</label>
+              <select id="sale-payment-method" class="form-control">
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Easypaisa">Easypaisa</option>
+                <option value="JazzCash">JazzCash</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Remaining Balance on This Sale:</label>
+              <input type="text" id="sale-calc-remaining" class="form-control bg-slate-100 font-bold mono text-rose-600" readonly value="Rs 3,200">
+            </div>
+
+            <div class="form-group">
+              <label>Updated Final Customer Balance:</label>
+              <input type="text" id="sale-calc-new-balance" class="form-control bg-slate-100 font-bold mono text-slate-800" readonly value="Rs 3,200">
+            </div>
+
+            <div class="form-group col-span-2">
+              <label for="sale-notes">Additional Notes / Reference (Optional)</label>
+              <input type="text" id="sale-notes" class="form-control" placeholder="Driver name, delivery notes, or payment TRX ID">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-sale')">Cancel</button>
+          <button type="submit" id="btn-save-sale" class="btn btn-primary">
+            <i class="fa-solid fa-check"></i> Complete Sale &amp; Print Receipt
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: RECEIVE PAYMENT -->
+  <div id="modal-payment" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-hand-holding-dollar text-emerald-600"></i> Receive Customer Payment</h3>
+        <button class="modal-close" onclick="closeModal('modal-payment')">&times;</button>
+      </div>
+      <form id="payment-form" onsubmit="handlePaymentSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="pay-customer-select">Select Customer *</label>
+            <select id="pay-customer-select" class="form-control" required onchange="onPaymentCustomerChange()">
+              <option value="">-- Choose Customer --</option>
+            </select>
+          </div>
+
+          <div id="pay-balance-info" class="customer-info-pill hidden mb-3">
+            <span>Outstanding Balance: </span>
+            <strong id="pay-balance-val" class="mono text-rose-600">Rs 0</strong>
+          </div>
+
+          <div class="form-group">
+            <label for="pay-amount">Payment Amount (PKR) *</label>
+            <input type="number" id="pay-amount" class="form-control font-bold text-emerald-700 text-lg" min="1" placeholder="Enter received amount" required oninput="onPayAmountChange()">
+            <div class="flex gap-1 mt-1">
+              <button type="button" class="btn btn-xs btn-outline" onclick="setPaymentAmountFull()">Pay Full Balance</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Updated Balance After Payment:</label>
+            <input type="text" id="pay-new-balance" class="form-control bg-slate-100 font-bold mono" readonly value="Rs 0">
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="form-group">
+              <label for="pay-method">Payment Method *</label>
+              <select id="pay-method" class="form-control" required>
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Easypaisa">Easypaisa</option>
+                <option value="JazzCash">JazzCash</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="pay-date">Payment Date</label>
+              <input type="date" id="pay-date" class="form-control">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="pay-ref">Reference # / Bank Transaction ID</label>
+            <input type="text" id="pay-ref" class="form-control" placeholder="Optional check # or online transfer ID">
+          </div>
+
+          <div class="form-group">
+            <label for="pay-remarks">Remarks</label>
+            <input type="text" id="pay-remarks" class="form-control" placeholder="Optional remarks">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-payment')">Cancel</button>
+          <button type="submit" id="btn-save-payment" class="btn btn-success">
+            <i class="fa-solid fa-receipt"></i> Save &amp; Print Receipt
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD CUSTOMER -->
+  <div id="modal-customer" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-user-plus text-blue-600"></i> Add New Customer</h3>
+        <button class="modal-close" onclick="closeModal('modal-customer')">&times;</button>
+      </div>
+      <form id="customer-form" onsubmit="handleCustomerSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="cust-name">Customer Name *</label>
+            <input type="text" id="cust-name" class="form-control" placeholder="e.g. Ali Ahmed, Royal Hotel" required>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="form-group">
+              <label for="cust-mobile">Mobile Number *</label>
+              <input type="tel" id="cust-mobile" class="form-control" placeholder="0300-1234567" required>
+            </div>
+            <div class="form-group">
+              <label for="cust-alt-mobile">Alternative Mobile</label>
+              <input type="tel" id="cust-alt-mobile" class="form-control" placeholder="Optional second number">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="form-group">
+              <label for="cust-type">Customer Type</label>
+              <select id="cust-type" class="form-control">
+                <option value="Regular Customer">Regular Customer</option>
+                <option value="Shop">Shop</option>
+                <option value="Hotel">Hotel</option>
+                <option value="Restaurant">Restaurant</option>
+                <option value="Business Customer">Business Customer</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="cust-opening-balance">Opening Balance (PKR)</label>
+              <input type="number" id="cust-opening-balance" class="form-control" value="0" placeholder="Positive if owes money">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="cust-address">Address</label>
+            <input type="text" id="cust-address" class="form-control" placeholder="Shop or home address">
+          </div>
+
+          <div class="form-group">
+            <label for="cust-remarks">Remarks</label>
+            <textarea id="cust-remarks" class="form-control" rows="2" placeholder="Credit limit or special instructions"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-customer')">Cancel</button>
+          <button type="submit" id="btn-save-customer" class="btn btn-primary">
+            <i class="fa-solid fa-check"></i> Register Customer
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT CUSTOMER -->
+  <div id="modal-edit-customer" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-user-pen text-blue-600"></i> Edit Customer Details</h3>
+        <button class="modal-close" onclick="closeModal('modal-edit-customer')">&times;</button>
+      </div>
+      <form id="edit-customer-form" onsubmit="handleEditCustomerSubmit(event)">
+        <input type="hidden" id="edit-cust-id">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="edit-cust-name">Customer Name *</label>
+            <input type="text" id="edit-cust-name" class="form-control" required>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="form-group">
+              <label for="edit-cust-mobile">Mobile Number *</label>
+              <input type="tel" id="edit-cust-mobile" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="edit-cust-alt-mobile">Alternative Mobile</label>
+              <input type="tel" id="edit-cust-alt-mobile" class="form-control">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="edit-cust-type">Customer Type</label>
+            <select id="edit-cust-type" class="form-control">
+              <option value="Regular Customer">Regular Customer</option>
+              <option value="Shop">Shop</option>
+              <option value="Hotel">Hotel</option>
+              <option value="Restaurant">Restaurant</option>
+              <option value="Business Customer">Business Customer</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-cust-address">Address</label>
+            <input type="text" id="edit-cust-address" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="edit-cust-remarks">Remarks</label>
+            <textarea id="edit-cust-remarks" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-edit-customer')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Customer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CUSTOMER KHATA / STATEMENT -->
+  <div id="modal-khata" class="modal-backdrop hidden">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" id="khata-title">Customer Account Ledger (Khata)</h3>
+          <span id="khata-subtitle" class="text-sm text-slate-500">Statement of Account</span>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-sm btn-outline" onclick="printCustomerKhataStatement()">
+            <i class="fa-solid fa-print"></i> Print Statement
+          </button>
+          <button class="modal-close" onclick="closeModal('modal-khata')">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body p-0">
+        <!-- Khata Customer Header Summary -->
+        <div class="p-4 bg-slate-100 border-b flex flex-wrap justify-between items-center gap-4">
+          <div>
+            <h4 id="khata-cust-name" class="font-bold text-lg text-slate-800">Ali Ahmed</h4>
+            <div class="text-xs text-slate-600 space-x-2">
+              <span id="khata-cust-id" class="mono font-semibold">CUST-1001</span>
+              <span>•</span>
+              <span id="khata-cust-mobile">0300-1234567</span>
+              <span>•</span>
+              <span id="khata-cust-type">Shop</span>
+            </div>
+          </div>
+          <div class="flex gap-4">
+            <div class="text-right">
+              <div class="text-xs text-slate-500">Total Billed (Debit)</div>
+              <strong id="khata-total-debit" class="mono text-blue-700">Rs 0</strong>
+            </div>
+            <div class="text-right">
+              <div class="text-xs text-slate-500">Total Paid (Credit)</div>
+              <strong id="khata-total-credit" class="mono text-emerald-700">Rs 0</strong>
+            </div>
+            <div class="text-right pl-3 border-l">
+              <div class="text-xs font-bold text-rose-600">Outstanding Balance</div>
+              <strong id="khata-running-balance" class="mono text-xl text-rose-700">Rs 0</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ledger Entries Table -->
+        <div class="table-responsive" style="max-height: 480px;">
+          <table class="table" id="khata-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Transaction ID</th>
+                <th>Description</th>
+                <th class="text-right text-blue-700">Debit (Rs)</th>
+                <th class="text-right text-emerald-700">Credit (Rs)</th>
+                <th class="text-right font-bold">Running Balance (Rs)</th>
+                <th>Method</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+            <tbody id="khata-table-body">
+              <tr><td colspan="8" class="text-center py-4">Loading Khata entries...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-khata')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RECEIVE STOCK (PURCHASE) -->
+  <div id="modal-stock-receive" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-truck-ramp-box text-blue-600"></i> Receive Cylinder Stock (Purchase)</h3>
+        <button class="modal-close" onclick="closeModal('modal-stock-receive')">&times;</button>
+      </div>
+      <form id="stock-receive-form" onsubmit="handleStockReceiveSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="stock-rec-size">Cylinder Size *</label>
+            <select id="stock-rec-size" class="form-control" required>
+              <option value="45.5">45.5 KG Commercial</option>
+              <option value="11.8" selected>11.8 KG Domestic</option>
+              <option value="3.9">3.9 KG Small</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="stock-rec-qty">Quantity Received (Cylinders) *</label>
+            <input type="number" id="stock-rec-qty" class="form-control font-bold" min="1" value="10" required>
+          </div>
+          <div class="form-group">
+            <label for="stock-rec-cost">Per Cylinder Purchase Cost (PKR)</label>
+            <input type="number" id="stock-rec-cost" class="form-control" min="0" placeholder="Optional unit cost">
+          </div>
+          <div class="form-group">
+            <label for="stock-rec-supplier">Supplier Name</label>
+            <input type="text" id="stock-rec-supplier" class="form-control" placeholder="e.g. Shell Gas, Pakistan LPG Supply">
+          </div>
+          <div class="form-group">
+            <label for="stock-rec-ref">Delivery Challan / Invoice #</label>
+            <input type="text" id="stock-rec-ref" class="form-control" placeholder="Supplier Bill Number">
+          </div>
+          <div class="form-group">
+            <label for="stock-rec-remarks">Remarks</label>
+            <input type="text" id="stock-rec-remarks" class="form-control" placeholder="Optional notes">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-stock-receive')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Add to Inventory</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADJUST STOCK -->
+  <div id="modal-stock-adjust" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-sliders text-amber-600"></i> Stock Adjustment</h3>
+        <button class="modal-close" onclick="closeModal('modal-stock-adjust')">&times;</button>
+      </div>
+      <form id="stock-adjust-form" onsubmit="handleStockAdjustSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="stock-adj-size">Cylinder Size *</label>
+            <select id="stock-adj-size" class="form-control" required>
+              <option value="45.5">45.5 KG Commercial</option>
+              <option value="11.8" selected>11.8 KG Domestic</option>
+              <option value="3.9">3.9 KG Small</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="stock-adj-type">Adjustment Action *</label>
+            <select id="stock-adj-type" class="form-control" required>
+              <option value="ADJUSTMENT_ADD">Add Cylinders (Inventory Count / Found)</option>
+              <option value="ADJUSTMENT_SUB">Deduct Cylinders (Leakage / Damaged / Audit)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="stock-adj-qty">Quantity *</label>
+            <input type="number" id="stock-adj-qty" class="form-control" min="1" value="1" required>
+          </div>
+          <div class="form-group">
+            <label for="stock-adj-remarks">Reason for Adjustment *</label>
+            <textarea id="stock-adj-remarks" class="form-control" rows="2" placeholder="e.g. Valve leak, annual count correction" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-stock-adjust')">Cancel</button>
+          <button type="submit" class="btn btn-warning"><i class="fa-solid fa-check"></i> Apply Adjustment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD EXPENSE -->
+  <div id="modal-expense" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-wallet text-amber-600"></i> Record Shop Expense</h3>
+        <button class="modal-close" onclick="closeModal('modal-expense')">&times;</button>
+      </div>
+      <form id="expense-form" onsubmit="handleExpenseSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="exp-category">Expense Category *</label>
+            <select id="exp-category" class="form-control" required>
+              <option value="Transportation">Transportation</option>
+              <option value="Electricity">Electricity</option>
+              <option value="Employee Salary">Employee Salary</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Rent">Rent</option>
+              <option value="Loading / Unloading">Loading / Unloading</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="exp-desc">Description *</label>
+            <input type="text" id="exp-desc" class="form-control" placeholder="e.g. Delivery rickshaw fuel, October electricity bill" required>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="form-group">
+              <label for="exp-amount">Amount (PKR) *</label>
+              <input type="number" id="exp-amount" class="form-control font-bold" min="1" required>
+            </div>
+            <div class="form-group">
+              <label for="exp-method">Payment Method</label>
+              <select id="exp-method" class="form-control">
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Easypaisa">Easypaisa</option>
+                <option value="JazzCash">JazzCash</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="exp-date">Expense Date</label>
+            <input type="date" id="exp-date" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="exp-remarks">Remarks (Optional)</label>
+            <input type="text" id="exp-remarks" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-expense')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: RECEIPT VIEW & PRINT (80mm & A4 Toggle) -->
+  <div id="modal-receipt" class="modal-backdrop hidden">
+    <div class="modal-dialog modal-receipt-dialog">
+      <div class="modal-header">
+        <div class="flex items-center gap-3">
+          <h3 class="modal-title"><i class="fa-solid fa-receipt text-blue-600"></i> Receipt Preview</h3>
+          <!-- Format Switcher -->
+          <div class="receipt-format-pills">
+            <button id="btn-format-80mm" class="format-pill active" onclick="switchReceiptFormat('80mm')">80mm Thermal</button>
+            <button id="btn-format-a4" class="format-pill" onclick="switchReceiptFormat('a4')">A4 Invoice</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button class="btn btn-sm btn-primary" onclick="printReceiptDirectly()">
+            <i class="fa-solid fa-print"></i> Print Receipt
+          </button>
+          <button class="modal-close" onclick="closeModal('modal-receipt')">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body p-0 receipt-preview-viewport">
+        <!-- Receipt Content Container (Switches class between format-80mm and format-a4) -->
+        <div id="printable-receipt" class="printable-receipt format-80mm">
+          <!-- Dynamic receipt content rendered here -->
+          <div class="loading-placeholder">Loading receipt data...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: CANCEL SALE CONFIRMATION -->
+  <div id="modal-cancel-sale" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title text-rose-600"><i class="fa-solid fa-ban"></i> Cancel Sale &amp; Revert Balance</h3>
+        <button class="modal-close" onclick="closeModal('modal-cancel-sale')">&times;</button>
+      </div>
+      <form id="cancel-sale-form" onsubmit="handleCancelSaleSubmit(event)">
+        <input type="hidden" id="cancel-sale-id">
+        <div class="modal-body">
+          <div class="alert alert-danger">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <div>
+              <strong>Financial &amp; Stock Reversal Notice:</strong>
+              Cancelling this sale will automatically restore cylinder inventory, reverse the customer's balance, and add an immutable reversal entry in the Khata.
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="cancel-sale-reason">Reason for Cancellation *</label>
+            <textarea id="cancel-sale-reason" class="form-control" rows="3" placeholder="e.g. Customer returned cylinder, accidental duplicate entry" required></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-cancel-sale')">Back</button>
+          <button type="submit" class="btn btn-danger"><i class="fa-solid fa-trash-can-arrow-up"></i> Confirm Cancellation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: CHANGE ADMIN PASSWORD -->
+  <div id="modal-change-password" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-key text-blue-600"></i> Change Admin Password</h3>
+        <button class="modal-close" onclick="closeModal('modal-change-password')">&times;</button>
+      </div>
+      <form id="change-password-form" onsubmit="handleChangePasswordSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="cp-current">Current Password *</label>
+            <input type="password" id="cp-current" class="form-control" required autocomplete="current-password">
+          </div>
+          <div class="form-group">
+            <label for="cp-new">New Password * (Min 6 characters)</label>
+            <input type="password" id="cp-new" class="form-control" required minlength="6" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="cp-confirm">Confirm New Password *</label>
+            <input type="password" id="cp-confirm" class="form-control" required minlength="6" autocomplete="new-password">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-change-password')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Password</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATIONS WRAPPER -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/script.js"></script>
+</body>
+</html>
