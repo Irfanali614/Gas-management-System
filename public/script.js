@@ -14,6 +14,10 @@ const AppState = {
   settings: null,
   customers: [],
   stockList: [],
+  plants: [],
+  selectedPlantId: null,
+  plantEntries: [],
+  plantPeriod: 'all',
   currentReceipt: null,
   receiptFormat: '80mm', // '80mm' or 'a4'
   selectedKhataCustomer: null
@@ -299,6 +303,7 @@ function navigate(viewName) {
     dashboard: 'Dashboard Overview',
     sales: 'LPG Cylinder Sales & Refilling',
     customers: 'Customer Accounts & Khata',
+    plant: 'Plant Grand Calculation Khata',
     payments: 'Payment Collection',
     receipts: 'Receipts & Billing Archive',
     stock: 'LPG Cylinder Stock Management',
@@ -322,6 +327,9 @@ function navigate(viewName) {
       break;
     case 'customers':
       CustomersModule.loadCustomersList();
+      break;
+    case 'plant':
+      PlantModule.init();
       break;
     case 'payments':
       PaymentsModule.loadPayments();

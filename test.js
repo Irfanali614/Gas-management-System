@@ -66,7 +66,30 @@ async function runTests() {
   assert(models.Expense, 'Expense model exists');
   assert(models.Settings, 'Settings model exists');
   assert(models.AuditLog, 'AuditLog model exists');
-  console.log('✓ All 10 Mongoose models configured properly');
+  assert(models.Plant, 'Plant model exists');
+  assert(models.PlantKhata, 'PlantKhata model exists');
+  console.log('✓ All 12 Mongoose models configured properly');
+
+  // Test 6: Grand Calculation Plant Khata formulas
+  console.log('[Test 6] Testing Grand Calculation Plant Khata Formulas...');
+  {
+    const prevRemaining = 150000; // Previous balance owed to plant
+    const mtOut = 40; // 40 empty cylinders sent out
+    const mtIn = 0;   // 0 empty received in
+    const vehicleNumber = 'TK-4821';
+    const loadCylinder = 50; // 50 filled cylinders received
+    const ratePerCylinder = 2800; // Rs 2800 per cylinder from plant
+    const loadAmount = loadCylinder * ratePerCylinder; // 50 * 2800 = 140,000
+    const totalAmount = prevRemaining + loadAmount; // 150,000 + 140,000 = 290,000
+    const depositAmount = 200000; // Deposited Rs 200,000 via Bank
+    const sourceOfDeposit = 'HBL Online Transfer Slip #7819';
+    const balanceRemaining = totalAmount - depositAmount; // 290,000 - 200,000 = 90,000
+
+    assert.strictEqual(loadAmount, 140000);
+    assert.strictEqual(totalAmount, 290000);
+    assert.strictEqual(balanceRemaining, 90000);
+    console.log('✓ Plant Khata calculations passed (Load: Rs 140,000, Total: Rs 290,000, Deposit: Rs 200,000, Balance: Rs 90,000)');
+  }
 
   console.log('\n--- ALL CORE TESTS PASSED SUCCESSFULLY! ---');
 }

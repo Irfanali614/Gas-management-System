@@ -210,6 +210,45 @@ const auditLogSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now, index: true }
 });
 
+// --- Plant Schema (LPG Refilling Terminals & Supply Plants) ---
+const plantSchema = new mongoose.Schema({
+  plantId: { type: String, required: true, unique: true, index: true },
+  name: { type: String, required: true, trim: true },
+  location: { type: String, trim: true, default: '' },
+  contactPerson: { type: String, trim: true, default: '' },
+  mobile: { type: String, trim: true, default: '' },
+  openingBalance: { type: Number, default: 0 },
+  currentBalance: { type: Number, default: 0 }, // Positive = Shop owes Plant
+  currentMtBalance: { type: Number, default: 0 }, // Net empty cylinders at plant
+  isDefault: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: true }
+}, { timestamps: true });
+
+// --- Plant Khata Entry Schema (Grand Calculation Khata) ---
+const plantKhataSchema = new mongoose.Schema({
+  entryId: { type: String, required: true, unique: true, index: true },
+  plantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Plant', required: true, index: true },
+  plantName: { type: String, required: true },
+  date: { type: Date, default: Date.now, index: true },
+  mtOut: { type: Number, default: 0 }, // Empty Cylinders dispatched OUT to plant
+  mtIn: { type: Number, default: 0 }, // Empty Cylinders received IN from plant
+  mtBalance: { type: Number, default: 0 }, // Running balance of empty cylinders at plant
+  vehicleNumber: { type: String, trim: true, default: '' }, // Vehicle / Bowser / Truck #
+  cylinderSize: { type: Number, default: 11.8 }, // 45.5, 11.8, 3.9
+  loadCylinder: { type: Number, default: 0 }, // Number of filled cylinders loaded / received
+  ratePerCylinder: { type: Number, default: 0 }, // Rate per cylinder charged by plant
+  loadAmount: { type: Number, default: 0 }, // loadCylinder * ratePerCylinder
+  previousRemainingAmount: { type: Number, default: 0 }, // Previous balance remaining
+  totalAmount: { type: Number, default: 0 }, // previousRemainingAmount + loadAmount
+  depositAmount: { type: Number, default: 0 }, // Deposit amount paid to plant
+  sourceOfDeposit: { type: String, trim: true, default: '' }, // Bank / Cash / Slip #
+  depositReference: { type: String, trim: true, default: '' }, // Cheque / Slip / Online Trx #
+  balanceRemainingAmount: { type: Number, default: 0 }, // totalAmount - depositAmount
+  updateStock: { type: Boolean, default: false }, // Did this update shop stock
+  remarks: { type: String, trim: true, default: '' },
+  status: { type: String, enum: ['ACTIVE', 'CANCELLED'], default: 'ACTIVE' }
+}, { timestamps: true });
+
 // Compile Models
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 const Customer = mongoose.models.Customer || mongoose.model('Customer', customerSchema);
@@ -221,6 +260,8 @@ const StockMovement = mongoose.models.StockMovement || mongoose.model('StockMove
 const Expense = mongoose.models.Expense || mongoose.model('Expense', expenseSchema);
 const Settings = mongoose.models.Settings || mongoose.model('Settings', settingsSchema);
 const AuditLog = mongoose.models.AuditLog || mongoose.model('AuditLog', auditLogSchema);
+const Plant = mongoose.models.Plant || mongoose.model('Plant', plantSchema);
+const PlantKhata = mongoose.models.PlantKhata || mongoose.model('PlantKhata', plantKhataSchema);
 
 // ============================================================================
 // 2. HELPER UTILITIES
@@ -364,9 +405,57 @@ async function seedInitialData() {
       });
       console.log(`Default admin created: ${initialUser} / ${initialPass}`);
     }
+
+    // 4. Default LPG Supply Plant
+    const plantCount = await Plant.countDocuments();
+    if (plantCount === 0) {
+      await Plant.create({
+        plantId: 'PLANT-1001',
+        name: 'Main LPG Refilling Plant',
+        location: 'Central LPG Terminal',
+        contactPerson: 'Plant Dispatch Manager',
+        mobile: '0300-1112233',
+        openingBalance: 0,
+        currentBalance: 0,
+        currentMtBalance: 0,
+        isDefault: true,
+        isActive: true
+      });
+      console.log('Default LPG Supply Plant initialized.');
+    }
   } catch (err) {
     console.error('Seed error:', err.message);
   }
+}
+
+// Recalculates running balances across all active entries for a plant
+async function recalculatePlantLedger(plantId) {
+  const plant = await Plant.findById(plantId);
+  if (!plant) return null;
+
+  const entries = await PlantKhata.find({ plantId: plant._id, status: 'ACTIVE' }).sort({ date: 1, _id: 1 });
+
+  let runningBalance = plant.openingBalance || 0;
+  let runningMt = 0;
+
+  for (const entry of entries) {
+    entry.previousRemainingAmount = runningBalance;
+    entry.loadAmount = Math.round((entry.loadCylinder || 0) * (entry.ratePerCylinder || 0));
+    entry.totalAmount = entry.previousRemainingAmount + entry.loadAmount;
+    entry.balanceRemainingAmount = entry.totalAmount - (entry.depositAmount || 0);
+
+    runningMt = runningMt + (entry.mtOut || 0) - (entry.mtIn || 0);
+    entry.mtBalance = runningMt;
+
+    runningBalance = entry.balanceRemainingAmount;
+    await entry.save();
+  }
+
+  plant.currentBalance = runningBalance;
+  plant.currentMtBalance = runningMt;
+  await plant.save();
+
+  return { currentBalance: runningBalance, currentMtBalance: runningMt, totalEntries: entries.length };
 }
 
 // ============================================================================
@@ -1755,9 +1844,355 @@ router.get('/audit-logs', verifyAdminToken, async (req, res) => {
   }
 });
 
+// ============================================================================
+// 14. PLANT KHATA (GRAND CALCULATION KHATA) APIS
+// ============================================================================
+
+// GET /api/plant-khata/plants
+router.get('/plant-khata/plants', verifyAdminToken, async (req, res) => {
+  try {
+    let plants = await Plant.find({ isActive: true }).sort({ isDefault: -1, name: 1 });
+    if (plants.length === 0) {
+      await seedInitialData();
+      plants = await Plant.find({ isActive: true });
+    }
+    return res.json({ success: true, plants });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/plant-khata/plants
+router.post('/plant-khata/plants', verifyAdminToken, async (req, res) => {
+  try {
+    const { name, location, contactPerson, mobile, openingBalance } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ success: false, message: 'Plant name is required.' });
+    }
+
+    const count = await Plant.countDocuments();
+    const plantId = `PLANT-${1000 + count + 1}`;
+    const opBal = Number(openingBalance) || 0;
+
+    const newPlant = await Plant.create({
+      plantId,
+      name: name.trim(),
+      location: (location || '').trim(),
+      contactPerson: (contactPerson || '').trim(),
+      mobile: (mobile || '').trim(),
+      openingBalance: opBal,
+      currentBalance: opBal,
+      currentMtBalance: 0,
+      isDefault: count === 0,
+      isActive: true
+    });
+
+    await logAudit('CREATE_PLANT', 'PLANT_KHATA', `Created Plant ${newPlant.name} (${plantId})`, req);
+    return res.status(201).json({ success: true, message: 'Plant registered successfully.', plant: newPlant });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/plant-khata/entries
+router.get('/plant-khata/entries', verifyAdminToken, async (req, res) => {
+  try {
+    const { plantId, search } = req.query;
+
+    let targetPlant;
+    if (plantId) {
+      targetPlant = await Plant.findById(plantId);
+    } else {
+      targetPlant = await Plant.findOne({ isDefault: true }) || await Plant.findOne();
+    }
+
+    if (!targetPlant) {
+      return res.json({ success: true, plant: null, entries: [], summary: {} });
+    }
+
+    const dateFilter = buildDateFilter(req.query, 'date');
+    const filter = { plantId: targetPlant._id, status: 'ACTIVE', ...dateFilter };
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      filter.$or = [
+        { vehicleNumber: { $regex: q, $options: 'i' } },
+        { sourceOfDeposit: { $regex: q, $options: 'i' } },
+        { entryId: { $regex: q, $options: 'i' } },
+        { remarks: { $regex: q, $options: 'i' } }
+      ];
+    }
+
+    // Get chronological entries for running balance
+    const entries = await PlantKhata.find(filter).sort({ date: -1, _id: -1 });
+
+    // Calculate period summary
+    let totalCylindersLoaded = 0;
+    let totalLoadAmount = 0;
+    let totalDeposits = 0;
+    let totalMtOut = 0;
+    let totalMtIn = 0;
+
+    entries.forEach(e => {
+      totalCylindersLoaded += (e.loadCylinder || 0);
+      totalLoadAmount += (e.loadAmount || 0);
+      totalDeposits += (e.depositAmount || 0);
+      totalMtOut += (e.mtOut || 0);
+      totalMtIn += (e.mtIn || 0);
+    });
+
+    return res.json({
+      success: true,
+      plant: targetPlant,
+      summary: {
+        totalCylindersLoaded,
+        totalLoadAmount,
+        totalDeposits,
+        totalMtOut,
+        totalMtIn,
+        currentBalance: targetPlant.currentBalance,
+        currentMtBalance: targetPlant.currentMtBalance,
+        openingBalance: targetPlant.openingBalance
+      },
+      entries
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/plant-khata/entries
+router.post('/plant-khata/entries', verifyAdminToken, async (req, res) => {
+  try {
+    const {
+      plantId,
+      date,
+      mtOut,
+      mtIn,
+      vehicleNumber,
+      cylinderSize,
+      loadCylinder,
+      ratePerCylinder,
+      depositAmount,
+      sourceOfDeposit,
+      depositReference,
+      updateStock,
+      remarks
+    } = req.body;
+
+    let targetPlant;
+    if (plantId) {
+      targetPlant = await Plant.findById(plantId);
+    } else {
+      targetPlant = await Plant.findOne({ isDefault: true }) || await Plant.findOne();
+    }
+
+    if (!targetPlant) {
+      return res.status(404).json({ success: false, message: 'Plant not found.' });
+    }
+
+    const numMtOut = Math.max(0, parseInt(mtOut, 10) || 0);
+    const numMtIn = Math.max(0, parseInt(mtIn, 10) || 0);
+    const numLoadCylinder = Math.max(0, parseInt(loadCylinder, 10) || 0);
+    const numRate = Math.max(0, Number(ratePerCylinder) || 0);
+    const numDeposit = Math.max(0, Math.round(Number(depositAmount) || 0));
+    const numSize = Number(cylinderSize) || 11.8;
+
+    if (numLoadCylinder === 0 && numDeposit === 0 && numMtOut === 0 && numMtIn === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide at least one valid figure (Cylinders Loaded, Deposit Amount, or MT Out/In).'
+      });
+    }
+
+    const entryId = generateId('PK');
+    const entryDate = date ? new Date(date) : new Date();
+
+    const newEntry = await PlantKhata.create({
+      entryId,
+      plantId: targetPlant._id,
+      plantName: targetPlant.name,
+      date: entryDate,
+      mtOut: numMtOut,
+      mtIn: numMtIn,
+      vehicleNumber: (vehicleNumber || '').trim().toUpperCase(),
+      cylinderSize: numSize,
+      loadCylinder: numLoadCylinder,
+      ratePerCylinder: numRate,
+      loadAmount: numLoadCylinder * numRate,
+      previousRemainingAmount: targetPlant.currentBalance || 0,
+      totalAmount: (targetPlant.currentBalance || 0) + (numLoadCylinder * numRate),
+      depositAmount: numDeposit,
+      sourceOfDeposit: (sourceOfDeposit || '').trim(),
+      depositReference: (depositReference || '').trim(),
+      balanceRemainingAmount: ((targetPlant.currentBalance || 0) + (numLoadCylinder * numRate)) - numDeposit,
+      updateStock: Boolean(updateStock),
+      remarks: (remarks || '').trim(),
+      status: 'ACTIVE'
+    });
+
+    // Recalculate full ledger running balances
+    await recalculatePlantLedger(targetPlant._id);
+
+    // If updateStock is requested and loadCylinder > 0, update shop stock
+    if (updateStock && numLoadCylinder > 0 && [45.5, 11.8, 3.9].includes(numSize)) {
+      const stock = await Stock.findOne({ cylinderSize: numSize });
+      if (stock) {
+        const prev = stock.currentStock;
+        stock.currentStock += numLoadCylinder;
+        if (numRate > 0) stock.purchaseCost = numRate;
+        stock.updatedAt = new Date();
+        await stock.save();
+
+        await StockMovement.create({
+          movementId: generateId('SM'),
+          date: entryDate,
+          cylinderSize: numSize,
+          quantity: numLoadCylinder,
+          movementType: 'RECEIVE',
+          previousStock: prev,
+          newStock: stock.currentStock,
+          referenceNumber: entryId,
+          unitCost: numRate,
+          totalCost: numRate * numLoadCylinder,
+          supplierName: targetPlant.name,
+          remarks: `Plant Load - Vehicle ${newEntry.vehicleNumber || 'N/A'}`
+        });
+      }
+    }
+
+    await logAudit(
+      'CREATE_PLANT_LOAD',
+      'PLANT_KHATA',
+      `Plant Load ${entryId}: Vehicle ${newEntry.vehicleNumber}, Load: ${numLoadCylinder}x ${numSize}KG @ Rs ${numRate}, Deposit: Rs ${numDeposit} (${newEntry.sourceOfDeposit})`,
+      req
+    );
+
+    const updatedPlant = await Plant.findById(targetPlant._id);
+    return res.status(201).json({
+      success: true,
+      message: 'Plant Grand Khata entry recorded successfully.',
+      entry: newEntry,
+      plant: updatedPlant
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/plant-khata/entries/:id
+router.get('/plant-khata/entries/:id', verifyAdminToken, async (req, res) => {
+  try {
+    const entry = await PlantKhata.findById(req.params.id);
+    if (!entry) return res.status(404).json({ success: false, message: 'Plant Khata entry not found.' });
+    return res.json({ success: true, entry });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// PUT /api/plant-khata/entries/:id
+router.put('/plant-khata/entries/:id', verifyAdminToken, async (req, res) => {
+  try {
+    const entry = await PlantKhata.findById(req.params.id);
+    if (!entry) return res.status(404).json({ success: false, message: 'Entry not found.' });
+
+    const {
+      date,
+      mtOut,
+      mtIn,
+      vehicleNumber,
+      cylinderSize,
+      loadCylinder,
+      ratePerCylinder,
+      depositAmount,
+      sourceOfDeposit,
+      depositReference,
+      remarks
+    } = req.body;
+
+    if (date) entry.date = new Date(date);
+    if (mtOut !== undefined) entry.mtOut = Math.max(0, parseInt(mtOut, 10) || 0);
+    if (mtIn !== undefined) entry.mtIn = Math.max(0, parseInt(mtIn, 10) || 0);
+    if (vehicleNumber !== undefined) entry.vehicleNumber = vehicleNumber.trim().toUpperCase();
+    if (cylinderSize !== undefined) entry.cylinderSize = Number(cylinderSize);
+    if (loadCylinder !== undefined) entry.loadCylinder = Math.max(0, parseInt(loadCylinder, 10) || 0);
+    if (ratePerCylinder !== undefined) entry.ratePerCylinder = Math.max(0, Number(ratePerCylinder) || 0);
+    if (depositAmount !== undefined) entry.depositAmount = Math.max(0, Math.round(Number(depositAmount) || 0));
+    if (sourceOfDeposit !== undefined) entry.sourceOfDeposit = sourceOfDeposit.trim();
+    if (depositReference !== undefined) entry.depositReference = depositReference.trim();
+    if (remarks !== undefined) entry.remarks = remarks.trim();
+
+    entry.loadAmount = entry.loadCylinder * entry.ratePerCylinder;
+    await entry.save();
+
+    await recalculatePlantLedger(entry.plantId);
+
+    await logAudit('UPDATE_PLANT_ENTRY', 'PLANT_KHATA', `Updated Plant Khata entry ${entry.entryId}`, req);
+    return res.json({ success: true, message: 'Entry updated and running balances recalculated.', entry });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE /api/plant-khata/entries/:id
+router.delete('/plant-khata/entries/:id', verifyAdminToken, async (req, res) => {
+  try {
+    const entry = await PlantKhata.findById(req.params.id);
+    if (!entry) return res.status(404).json({ success: false, message: 'Entry not found.' });
+
+    const plantId = entry.plantId;
+
+    // If it was added to stock, we can revert stock
+    if (entry.updateStock && entry.loadCylinder > 0) {
+      const stock = await Stock.findOne({ cylinderSize: entry.cylinderSize });
+      if (stock) {
+        stock.currentStock = Math.max(0, stock.currentStock - entry.loadCylinder);
+        await stock.save();
+      }
+    }
+
+    await PlantKhata.findByIdAndDelete(entry._id);
+    await recalculatePlantLedger(plantId);
+
+    await logAudit('DELETE_PLANT_ENTRY', 'PLANT_KHATA', `Deleted entry ${entry.entryId} (${entry.vehicleNumber})`, req);
+    return res.json({ success: true, message: 'Entry deleted and balances recalculated successfully.' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET /api/plant-khata/statement
+router.get('/plant-khata/statement', verifyAdminToken, async (req, res) => {
+  try {
+    const { plantId } = req.query;
+    let plant;
+    if (plantId) {
+      plant = await Plant.findById(plantId);
+    } else {
+      plant = await Plant.findOne({ isDefault: true }) || await Plant.findOne();
+    }
+
+    if (!plant) return res.status(404).json({ success: false, message: 'Plant not found.' });
+
+    const settings = await Settings.findOne() || {};
+    const entries = await PlantKhata.find({ plantId: plant._id, status: 'ACTIVE' }).sort({ date: 1, _id: 1 });
+
+    return res.json({
+      success: true,
+      business: settings,
+      plant,
+      statementDate: new Date(),
+      entries
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // Export router and seed function
 module.exports = {
   router,
   seedInitialData,
-  models: { User, Customer, Sale, Payment, CustomerLedger, Stock, StockMovement, Expense, Settings, AuditLog }
+  models: { User, Customer, Sale, Payment, CustomerLedger, Stock, StockMovement, Expense, Settings, AuditLog, Plant, PlantKhata }
 };

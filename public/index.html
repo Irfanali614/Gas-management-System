@@ -108,6 +108,10 @@
 
         <div class="nav-section-label">INVENTORY &amp; ACCOUNTS</div>
         <nav class="nav-menu">
+          <a href="#plant" class="nav-item" data-view="plant" onclick="navigate('plant')">
+            <i class="fa-solid fa-industry"></i>
+            <span>Plant Khata (Grand)</span>
+          </a>
           <a href="#stock" class="nav-item" data-view="stock" onclick="navigate('stock')">
             <i class="fa-solid fa-cubes-stacked"></i>
             <span>Cylinder Stock</span>
@@ -177,6 +181,9 @@
           <div class="quick-actions">
             <button class="btn btn-sm btn-primary" onclick="openSaleModal()">
               <i class="fa-solid fa-plus"></i> <span class="btn-text">New LPG Sale</span>
+            </button>
+            <button class="btn btn-sm btn-outline text-blue" onclick="openPlantLoadModal()">
+              <i class="fa-solid fa-industry"></i> <span class="btn-text">Plant Load</span>
             </button>
             <button class="btn btn-sm btn-success" onclick="openPaymentModal()">
               <i class="fa-solid fa-hand-holding-dollar"></i> <span class="btn-text">Receive Payment</span>
@@ -629,6 +636,151 @@
                 </thead>
                 <tbody id="movements-table-body">
                   <tr><td colspan="9" class="text-center py-4">Loading stock movements...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ================================================================ -->
+        <!-- VIEW: PLANT KHATA (GRAND CALCULATION KHATA) -->
+        <!-- ================================================================ -->
+        <section id="view-plant" class="view-section hidden">
+          <div class="section-topbar">
+            <div>
+              <h2 class="section-heading">Plant Grand Calculation Khata</h2>
+              <p class="section-subheading">Track MT OUT, MT IN, Vehicle loads, cylinder purchase rates, deposit payments, and running balance with the refilling plant.</p>
+            </div>
+            <div class="action-buttons-group">
+              <button class="btn btn-primary" onclick="openPlantLoadModal()">
+                <i class="fa-solid fa-truck-droplet"></i> + New Plant Load Entry
+              </button>
+              <button class="btn btn-success" onclick="openPlantDepositModal()">
+                <i class="fa-solid fa-hand-holding-dollar"></i> + Deposit Payment
+              </button>
+              <button class="btn btn-outline" onclick="exportPlantKhataCSV()">
+                <i class="fa-solid fa-file-csv"></i> Export CSV
+              </button>
+              <button class="btn btn-secondary" onclick="printPlantStatement()">
+                <i class="fa-solid fa-print"></i> Print Statement
+              </button>
+            </div>
+          </div>
+
+          <!-- Plant Selector & Period Filter Bar -->
+          <div class="filter-header-card">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-industry text-blue"></i>
+              <strong class="text-sm text-slate-700">Refilling Plant:</strong>
+              <select id="plant-select-dropdown" class="form-control form-control-sm font-bold text-slate-800" onchange="onPlantChange()">
+                <option value="">Loading plants...</option>
+              </select>
+              <button class="btn btn-xs btn-outline whitespace-nowrap" onclick="openAddPlantModal()">
+                <i class="fa-solid fa-plus"></i> Add Plant
+              </button>
+            </div>
+
+            <div class="filter-pills ml-auto" id="plant-period-pills">
+              <button class="filter-pill active" onclick="setPlantPeriod('all', this)">All Records</button>
+              <button class="filter-pill" onclick="setPlantPeriod('this_month', this)">This Month</button>
+              <button class="filter-pill" onclick="setPlantPeriod('7_days', this)">Last 7 Days</button>
+              <button class="filter-pill" onclick="setPlantPeriod('today', this)">Today</button>
+            </div>
+          </div>
+
+          <!-- Plant Summary KPI Cards -->
+          <div class="kpi-grid mb-4">
+            <!-- Current Balance Remaining Owed -->
+            <div class="kpi-card">
+              <div class="kpi-icon-wrap bg-rose-subtle text-rose">
+                <i class="fa-solid fa-scale-unbalanced"></i>
+              </div>
+              <div class="kpi-data">
+                <span class="kpi-label">Balance Remaining (Owed)</span>
+                <h3 id="pk-summary-balance" class="kpi-value text-rose-600">Rs 0</h3>
+                <span class="kpi-subtext text-danger font-semibold">Net Payable to Plant</span>
+              </div>
+            </div>
+
+            <!-- Total Load Amount -->
+            <div class="kpi-card">
+              <div class="kpi-icon-wrap bg-blue-subtle text-blue">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+              </div>
+              <div class="kpi-data">
+                <span class="kpi-label">Total Load Amount</span>
+                <h3 id="pk-summary-load-amount" class="kpi-value text-blue-700">Rs 0</h3>
+                <span class="kpi-subtext">Cylinder Purchases Billed</span>
+              </div>
+            </div>
+
+            <!-- Total Deposits Paid -->
+            <div class="kpi-card">
+              <div class="kpi-icon-wrap bg-emerald-subtle text-emerald">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+              </div>
+              <div class="kpi-data">
+                <span class="kpi-label">Total Deposits Paid</span>
+                <h3 id="pk-summary-deposits" class="kpi-value text-emerald-700">Rs 0</h3>
+                <span class="kpi-subtext text-success">Bank &amp; Cash Deposits</span>
+              </div>
+            </div>
+
+            <!-- Total Cylinders Loaded -->
+            <div class="kpi-card">
+              <div class="kpi-icon-wrap bg-amber-subtle text-amber">
+                <i class="fa-solid fa-cubes-stacked"></i>
+              </div>
+              <div class="kpi-data">
+                <span class="kpi-label">Total Cylinders Loaded</span>
+                <h3 id="pk-summary-cylinders" class="kpi-value text-slate-800">0</h3>
+                <span class="kpi-subtext">Filled Units Received</span>
+              </div>
+            </div>
+
+            <!-- Empty (MT) Cylinder Balance -->
+            <div class="kpi-card">
+              <div class="kpi-icon-wrap bg-indigo-subtle text-indigo">
+                <i class="fa-solid fa-box-open"></i>
+              </div>
+              <div class="kpi-data">
+                <span class="kpi-label">MT (Empty) at Plant</span>
+                <h3 id="pk-summary-mt-balance" class="kpi-value text-indigo-700">0</h3>
+                <span class="kpi-subtext">MT OUT − MT IN Balance</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Grand Calculation Khata Table Toolbar -->
+          <div class="table-toolbar">
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" id="plant-search-input" class="form-control" placeholder="Search vehicle #, deposit source, reference, or entry ID..." onkeyup="filterPlantKhataTable()">
+            </div>
+          </div>
+
+          <!-- Grand Calculation Khata Table -->
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table" id="plant-khata-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th class="text-center text-amber-700">MT OUT</th>
+                    <th class="text-center text-indigo-700">MT IN</th>
+                    <th>Vehicle Number</th>
+                    <th>Load Cylinder</th>
+                    <th>Rate / Cyl</th>
+                    <th class="text-right text-blue-700">Load Amount (PKR)</th>
+                    <th class="text-right font-bold">Total Amount (PKR)</th>
+                    <th class="text-right text-emerald-700">Deposit Amount (PKR)</th>
+                    <th>Source of Deposit</th>
+                    <th class="text-right font-bold text-rose-700">Balance Remaining (PKR)</th>
+                    <th class="text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="plant-khata-table-body">
+                  <tr><td colspan="12" class="text-center py-4 text-muted">Loading Grand Calculation Plant Khata...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1564,6 +1716,212 @@
         <div id="printable-receipt" class="printable-receipt format-80mm">
           <!-- Dynamic receipt content rendered here -->
           <div class="loading-placeholder">Loading receipt data...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NEW PLANT LOAD / GRAND KHATA ENTRY -->
+  <div id="modal-plant-entry" class="modal-backdrop hidden">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title" id="plant-entry-modal-title"><i class="fa-solid fa-industry text-blue-600"></i> Plant Load / Grand Khata Entry</h3>
+        <button class="modal-close" onclick="closeModal('modal-plant-entry')">&times;</button>
+      </div>
+      <form id="plant-entry-form" onsubmit="handlePlantEntrySubmit(event)">
+        <input type="hidden" id="edit-plant-entry-id">
+        <div class="modal-body">
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Plant Selector -->
+            <div class="form-group">
+              <label for="plant-entry-plant-select">Refilling Plant *</label>
+              <select id="plant-entry-plant-select" class="form-control" required onchange="onPlantEntryPlantChange()">
+                <option value="">-- Select Plant --</option>
+              </select>
+            </div>
+
+            <!-- Date -->
+            <div class="form-group">
+              <label for="plant-entry-date">Date &amp; Time *</label>
+              <input type="datetime-local" id="plant-entry-date" class="form-control" required>
+            </div>
+
+            <!-- Vehicle Number -->
+            <div class="form-group">
+              <label for="plant-entry-vehicle">Vehicle Number (Bowser / Truck / Van) *</label>
+              <input type="text" id="plant-entry-vehicle" class="form-control font-bold uppercase" placeholder="e.g. TK-4821, LES-9920" required>
+            </div>
+
+            <!-- Cylinder Size -->
+            <div class="form-group">
+              <label for="plant-entry-cylinder-size">Cylinder Size</label>
+              <select id="plant-entry-cylinder-size" class="form-control" onchange="onPlantEntryCalc()">
+                <option value="45.5">45.5 KG Commercial</option>
+                <option value="11.8" selected>11.8 KG Domestic</option>
+                <option value="3.9">3.9 KG Small</option>
+              </select>
+            </div>
+
+            <!-- MT OUT -->
+            <div class="form-group">
+              <label for="plant-entry-mt-out"><i class="fa-solid fa-arrow-up-from-bracket text-amber-600"></i> MT OUT (Empty Cylinders Sent)</label>
+              <input type="number" id="plant-entry-mt-out" class="form-control font-bold text-amber-700" min="0" value="0">
+            </div>
+
+            <!-- MT IN -->
+            <div class="form-group">
+              <label for="plant-entry-mt-in"><i class="fa-solid fa-arrow-down-to-bracket text-indigo-600"></i> MT IN (Empty Cylinders Received)</label>
+              <input type="number" id="plant-entry-mt-in" class="form-control font-bold text-indigo-700" min="0" value="0">
+            </div>
+
+            <!-- Load Cylinder Quantity -->
+            <div class="form-group">
+              <label for="plant-entry-load-cylinder"><i class="fa-solid fa-cubes text-blue-600"></i> Load Cylinder (Quantity Filled) *</label>
+              <input type="number" id="plant-entry-load-cylinder" class="form-control font-bold text-blue-700 text-lg" min="0" value="0" required oninput="onPlantEntryCalc()">
+            </div>
+
+            <!-- Rate per Cylinder -->
+            <div class="form-group">
+              <label for="plant-entry-rate"><i class="fa-solid fa-tag text-emerald-600"></i> Rate per Cylinder (PKR) *</label>
+              <input type="number" id="plant-entry-rate" class="form-control font-bold text-lg" min="0" value="0" required oninput="onPlantEntryCalc()">
+            </div>
+          </div>
+
+          <!-- Grand Calculation Live Summary Card -->
+          <div class="calc-summary-card my-3 bg-blue-subtle border border-blue-200">
+            <div class="grid grid-cols-3 gap-2 text-center">
+              <div class="p-2 border-r border-blue-200">
+                <span class="text-xs text-slate-600 font-semibold uppercase block">Load Amount</span>
+                <strong id="plant-calc-load-amount" class="text-blue-700 text-lg mono">Rs 0</strong>
+                <small class="text-xs text-slate-500 block">Load Cylinders × Rate</small>
+              </div>
+              <div class="p-2 border-r border-blue-200">
+                <span class="text-xs text-slate-600 font-semibold uppercase block">Previous Balance</span>
+                <strong id="plant-calc-prev-balance" class="text-slate-700 text-lg mono">Rs 0</strong>
+                <small class="text-xs text-slate-500 block">Remaining from Last Entry</small>
+              </div>
+              <div class="p-2">
+                <span class="text-xs text-slate-600 font-semibold uppercase block">Total Amount</span>
+                <strong id="plant-calc-total-amount" class="text-slate-900 text-lg mono font-bold">Rs 0</strong>
+                <small class="text-xs text-slate-500 block">Remaining + Load Amount</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Deposit Section -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="form-group">
+              <label for="plant-entry-deposit-amount"><i class="fa-solid fa-hand-holding-dollar text-emerald-600"></i> Deposit Amount (PKR)</label>
+              <input type="number" id="plant-entry-deposit-amount" class="form-control font-bold text-emerald-700 text-lg" min="0" value="0" oninput="onPlantEntryCalc()">
+            </div>
+
+            <div class="form-group">
+              <label for="plant-entry-deposit-source">Source of Deposit</label>
+              <input type="text" id="plant-entry-deposit-source" class="form-control" list="deposit-source-suggestions" placeholder="e.g. HBL Online, Meezan Bank, Cash, MCB">
+              <datalist id="deposit-source-suggestions">
+                <option value="Cash">
+                <option value="HBL Online Transfer">
+                <option value="Meezan Bank Transfer">
+                <option value="MCB Bank">
+                <option value="Bank Alfalah">
+                <option value="Allied Bank">
+                <option value="Easypaisa">
+                <option value="JazzCash">
+                <option value="Cheque / Deposit Slip">
+              </datalist>
+            </div>
+
+            <div class="form-group">
+              <label for="plant-entry-deposit-ref">Deposit Slip # / Cheque # (Optional)</label>
+              <input type="text" id="plant-entry-deposit-ref" class="form-control" placeholder="Slip or Online Transaction ID">
+            </div>
+
+            <!-- Balance Remaining Amount (Auto-Calculated) -->
+            <div class="form-group">
+              <label class="font-bold text-rose-700">Balance Remaining Amount (PKR):</label>
+              <input type="text" id="plant-calc-balance-remaining" class="form-control bg-slate-100 font-bold mono text-lg text-rose-700" readonly value="Rs 0">
+              <small class="text-xs text-slate-500">Total Amount − Deposit Amount</small>
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="checkbox-label">
+                <input type="checkbox" id="plant-entry-update-stock" checked>
+                <span>Directly add these loaded cylinders to shop stock inventory</span>
+              </label>
+            </div>
+
+            <div class="form-group col-span-2">
+              <label for="plant-entry-remarks">Remarks / Delivery Notes</label>
+              <input type="text" id="plant-entry-remarks" class="form-control" placeholder="Driver name, seal #, or notes">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-plant-entry')">Cancel</button>
+          <button type="submit" id="btn-save-plant-entry" class="btn btn-primary">
+            <i class="fa-solid fa-floppy-disk"></i> Save Grand Khata Entry
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD REFILLING PLANT -->
+  <div id="modal-add-plant" class="modal-backdrop hidden">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-industry text-blue-600"></i> Register Refilling Plant / Terminal</h3>
+        <button class="modal-close" onclick="closeModal('modal-add-plant')">&times;</button>
+      </div>
+      <form id="add-plant-form" onsubmit="handleAddPlantSubmit(event)">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="plant-new-name">Plant / Terminal Name *</label>
+            <input type="text" id="plant-new-name" class="form-control" placeholder="e.g. Parco LPG Terminal, Shell Gas Plant" required>
+          </div>
+          <div class="form-group">
+            <label for="plant-new-location">Location / Terminal Address</label>
+            <input type="text" id="plant-new-location" class="form-control" placeholder="e.g. GT Road Terminal, Port Qasim">
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div class="form-group">
+              <label for="plant-new-contact">Contact Person</label>
+              <input type="text" id="plant-new-contact" class="form-control" placeholder="Dispatch Manager">
+            </div>
+            <div class="form-group">
+              <label for="plant-new-mobile">Mobile Number</label>
+              <input type="tel" id="plant-new-mobile" class="form-control" placeholder="0300-1234567">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="plant-new-opening-balance">Opening Balance (PKR)</label>
+            <input type="number" id="plant-new-opening-balance" class="form-control font-bold" value="0" placeholder="Positive if shop owes plant">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-add-plant')">Cancel</button>
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Save Plant</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: PRINT PLANT STATEMENT -->
+  <div id="modal-plant-statement" class="modal-backdrop hidden">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-header">
+        <h3 class="modal-title"><i class="fa-solid fa-print text-blue-600"></i> Plant Grand Khata Statement</h3>
+        <div class="flex gap-2">
+          <button class="btn btn-sm btn-primary" onclick="printPlantStatementDirectly()">
+            <i class="fa-solid fa-print"></i> Print Sheet
+          </button>
+          <button class="modal-close" onclick="closeModal('modal-plant-statement')">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body p-0">
+        <div id="printable-plant-statement" class="p-4 bg-white">
+          <!-- Dynamic Plant Statement content -->
+          <div class="loading-placeholder">Loading Plant Statement...</div>
         </div>
       </div>
     </div>
